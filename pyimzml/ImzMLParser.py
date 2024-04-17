@@ -200,6 +200,12 @@ class ImzMLParser:
                     self.__read_polarity(elem)
                     is_first_spectrum = False
                 slist.remove(elem)
+                elem.clear()
+
+            # Clear the parent element if necessary
+            if event == "end" and elem.getparent() is not None:
+                elem.getparent().clear()
+
         self.__fix_offsets()
 
     def __fix_offsets(self):
