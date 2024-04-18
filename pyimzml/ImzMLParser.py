@@ -207,15 +207,18 @@ class ImzMLParser:
                 elif self.parse_lib == "lxml":
                     # if elem.getparent() is not None:
                     #     elem.getparent().clear()
+                    # for ancestor in elem.xpath('ancestor-or-self::*'):
+                    #     while ancestor.getprevious() is not None:
+                    #         del ancestor.getparent()[0]
+            if event == "end":
+                if not self.parse_lib or self.parse_lib == "ElementTree":
+                    elem.clear()
+                elif self.parse_lib == "lxml":
+                    # if elem.getparent() is not None:
+                    #     elem.getparent().clear()
                     for ancestor in elem.xpath('ancestor-or-self::*'):
                         while ancestor.getprevious() is not None:
                             del ancestor.getparent()[0]
-            # if event == "end":
-            #     if not self.parse_lib or self.parse_lib == "ElementTree":
-            #         elem.clear()
-            #     elif self.parse_lib == "lxml":
-            #         if elem.getparent() is not None:
-            #             elem.getparent().clear()
         self.__fix_offsets()
 
     def __fix_offsets(self):
