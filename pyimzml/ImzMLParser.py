@@ -201,13 +201,13 @@ class ImzMLParser:
                     self.__read_polarity(elem)
                     is_first_spectrum = False
                 slist.remove(elem)
+                elem.clear()
             if event == "end":
-                print("Found the end")
-                # if not self.parse_lib or self.parse_lib == "ElementTree":
-                #     elem.clear()
-                # elif self.parse_lib == "lxml":
-                #     if elem.getparent() is not None:
-                #         elem.getparent().clear()
+                if not self.parse_lib or self.parse_lib == "ElementTree":
+                    elem.clear()
+                elif self.parse_lib == "lxml":
+                    if elem.getparent() is not None:
+                        elem.getparent().clear()
         self.__fix_offsets()
 
     def __fix_offsets(self):
