@@ -202,11 +202,12 @@ class ImzMLParser:
                     is_first_spectrum = False
                 slist.remove(elem)
             if event == "end":
-                if not self.parse_lib or self.parse_lib == "ElementTree":
-                    elem.clear()
-                elif self.parse_lib == "lxml":
-                    if elem.getparent() is not None:
-                        elem.getparent().clear()
+                print("Found the end")
+                # if not self.parse_lib or self.parse_lib == "ElementTree":
+                #     elem.clear()
+                # elif self.parse_lib == "lxml":
+                #     if elem.getparent() is not None:
+                #         elem.getparent().clear()
         self.__fix_offsets()
 
     def __fix_offsets(self):
