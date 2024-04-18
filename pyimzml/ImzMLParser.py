@@ -201,7 +201,6 @@ class ImzMLParser:
                     self.__read_polarity(elem)
                     is_first_spectrum = False
                 slist.remove(elem)
-                elem.clear()
             if event == "end":
                 if not self.parse_lib or self.parse_lib == "ElementTree":
                     elem.clear()
