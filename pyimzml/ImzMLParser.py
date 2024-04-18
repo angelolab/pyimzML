@@ -192,7 +192,9 @@ class ImzMLParser:
         is_first_spectrum = True
 
         for event, elem in elem_iterator:
+            print(elem)
             if elem.tag == self.sl + "spectrumList" and event == "start":
+                print("Processing metadata")
                 self.__process_metadata()
                 slist = elem
             elif elem.tag == self.sl + "spectrum" and event == "end":
@@ -240,6 +242,8 @@ class ImzMLParser:
             self.mobilityOffsets = fix(self.mobilityOffsets)
 
     def __process_metadata(self):
+        print("self.metadata is")
+        print(self.metadata)
         if self.metadata is None:
             self.metadata = Metadata(self.root)
             for param_id, param_group in self.metadata.referenceable_param_groups.items():
