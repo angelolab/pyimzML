@@ -192,9 +192,7 @@ class ImzMLParser:
         is_first_spectrum = True
 
         for event, elem in elem_iterator:
-            print(elem)
             if elem.tag == self.sl + "spectrumList" and event == "start":
-                print("Processing metadata")
                 self.__process_metadata()
                 slist = elem
             elif elem.tag == self.sl + "spectrum" and event == "end":
@@ -212,7 +210,7 @@ class ImzMLParser:
                 #     # for ancestor in elem.xpath('ancestor-or-self::*'):
                 #     #     while ancestor.getprevious() is not None:
                 #     #         del ancestor.getparent()[0]
-            if event == "end":
+            if event == "end" and self.metadata is not None:
                 if not self.parse_lib or self.parse_lib == "ElementTree":
                     elem.clear()
                 elif self.parse_lib == "lxml":
