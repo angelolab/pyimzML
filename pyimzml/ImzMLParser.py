@@ -140,6 +140,7 @@ class ImzMLParser:
         elif self.include_mobility == False:
             self.mzGroupId = self.intGroupId = self.mzPrecision = self.intensityPrecision = None
 
+        self.parse_lib = parse_lib
         self.iterparse = choose_iterparse(parse_lib)
         self.__iter_read_spectrum_meta(include_spectra_metadata)
         if ibd_file is INFER_IBD_FROM_IMZML:
