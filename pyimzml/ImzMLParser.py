@@ -210,7 +210,7 @@ class ImzMLParser:
                 #     # for ancestor in elem.xpath('ancestor-or-self::*'):
                 #     #     while ancestor.getprevious() is not None:
                 #     #         del ancestor.getparent()[0]
-            if event == "end" and self.metadata is not None:
+            if event == "end" and self.metadata is not None and not is_first_spectrum:
                 if not self.parse_lib or self.parse_lib == "ElementTree":
                     elem.clear()
                 elif self.parse_lib == "lxml":
@@ -240,8 +240,6 @@ class ImzMLParser:
             self.mobilityOffsets = fix(self.mobilityOffsets)
 
     def __process_metadata(self):
-        print("self.metadata is")
-        print(self.metadata)
         if self.metadata is None:
             self.metadata = Metadata(self.root)
             for param_id, param_group in self.metadata.referenceable_param_groups.items():
