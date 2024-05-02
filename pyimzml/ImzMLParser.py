@@ -54,6 +54,131 @@ def _get_cv_param(elem, accession, deep=False, convert=False):
         return node.get('value')
 
 
+class ImzMLParserLite:
+    def __init__(
+        self,
+        filename,
+        parse_lib=None,
+        ibd_file=INFER_IBD_FROM_IMZML,
+    ):
+        """
+        Opens the two files corresponding to the file name, reads the entire .imzML
+        file and extracts required attributes. Does not read any binary data, yet.
+
+        :param filename:
+            name of the XML file. Must end with .imzML. Binary data file must be named equally but ending with .ibd
+            Alternatively an open file or Buffer Protocol object can be supplied, if ibd_file is also supplied
+        :param parse_lib:
+            XML-parsing library to use: 'ElementTree' or 'lxml', the later will be used if argument not provided
+        :param ibd_file:
+            File or Buffer Protocol object for the .ibd file. Leave blank to infer it from the imzml filename.
+            Set to None if no data from the .ibd file is needed (getspectrum calls will not work)
+        """
+        # ElementTree requires the schema location for finding tags (why?) but
+        # fails to read it from the root element. As this should be identical
+        # for all imzML files, it is hard-coded here and prepended before every tag
+        self.sl = "{http://psi.hupo.org/ms/mzml}"
+        # maps each imzML number format to its struct equivalent
+        self.precisionDict = dict(PRECISION_DICT)
+        # maps each number format character to its amount of bytes used
+        self.sizeDict = dict(SIZE_DICT)
+        self.filename = filename
+        self.mzOffsets = []
+        self.intensityOffsets = []
+        self.mzLengths = []
+        self.intensityLengths = []
+        # list of all (x,y,z) coordinates as tuples.
+        self.coordinates = []
+        self.root = None
+        self.metadata = None
+        self.polarity = None
+        self.mzGroupId = self.intGroupId = self.mzPrecision = self.intensityPrecision = None
+        self.parse_lib = parse_lib
+        self.iterparse = choose_iterparse(parse_lib)
+        self.__extract_metadata()
+        self.__process_spectra()
+
+        # self.__iter_read_spectrum_meta(include_spectra_metadata)
+        if ibd_file is INFER_IBD_FROM_IMZML:
+            # name of the binary file
+            ibd_filename = self._infer_bin_filename(self.filename)
+            self.m = open(ibd_filename, "rb")
+        else:
+            self.m = ibd_file
+
+        # # Dict for basic imzML metadata other than those required for reading
+        # # spectra. See method __readimzmlmeta()
+        # self.imzmldict = self.__readimzmlmeta()
+        # self.imzmldict['max count of pixels z'] = np.asarray(self.coordinates)[:,2].max()
+
+    def __iter_read_spectrum_meta(self, include_spectra_metadata):
+        """
+        This method should only be called by __init__. Reads the data formats, coordinates and offsets from
+        the .imzML file and initializes the respective attributes. While traversing the XML tree, the per-spectrum
+        metadata is pruned, i.e. the <spectrumList> element(s) are left behind empty.
+
+        Supported accession values for the number formats: "MS:1000521", "MS:1000523", "IMS:1000141" or
+        "IMS:1000142". The string values are "32-bit float", "64-bit float", "32-bit integer", "64-bit integer".
+        """
+        mz_group = int_group = None
+        slist = None
+        elem_iterator = self.iterparse(self.filename, events=("start", "end"))
+
+        if sys.version_info > (3,):
+            _, self.root = next(elem_iterator)
+        else:
+            _, self.root = elem_iterator.next()
+
+        is_first_spectrum = True
+
+        for event, elem in elem_iterator:
+            if elem.tag == self.sl + "spectrumList" and event == "start":
+                self.__process_metadata()
+                slist = elem
+            elif elem.tag == self.sl + "spectrum" and event == "end":
+                self.__process_spectrum(elem, include_spectra_metadata)
+                if is_first_spectrum:
+                    self.__read_polarity(elem)
+                    is_first_spectrum = False
+                slist.remove(elem)
+        self.__fix_offsets()
+
+    def __extract_metadata(self):
+        # First pass to extract metadata
+        for event, elem in self.iterparse(self.filename, events=("start", "end")):
+            if event == 'start' and elem.tag.endswith("referenceableParamGroup"):
+                id = elem.get("id")
+                if id == "mzArray" or id == "intensityArray":
+                    for child in elem:
+                        if child.get("name") == "64-bit float" or child.get("name") == "32-bit float":
+                            if id == "mzArray":
+                                self.mzPrecision = child.get("name")
+                            elif id == "intensityArray":
+                                self.intensityPrecision = child.get("name")
+            # Clear elements not needed to free memory
+            elem.clear()
+
+    def __process_spectra(self):
+        # Second pass to process each spectrum
+        for event, elem in self.iterparse(self.filename, events=("start", "end")):
+            if event == 'start' and elem.tag.endswith("spectrum"):
+                for binaryDataArray in spectrum.findall(".//binaryDataArray"):
+                    ref = binaryDataArray.find(".//referenceableParamGroupRef").attrib["ref"]
+                    if ref == "mzArray":
+                        # Process m/z array data
+                        offset = int(binaryDataArray.find(".//*[name()='external offset']").attrib["value"])
+                        array_length = int(binaryDataArray.find(".//*[name()='external array length']").attrib["value"])
+                        self.mzOffsets.append(offset)
+                        self.mzLengths.append(array_length)
+                    elif ref == "intensityArray":
+                        # Process intensity array data
+                        offset = int(binaryDataArray.find(".//*[name()='external offset']").attrib["value"])
+                        array_length = int(binaryDataArray.find(".//*[name()='external array length']").attrib["value"])
+                        self.intensityOffsets.append(offset)
+                        self.intensityLengths.append(array_length)
+            elem.clear()
+
+
 class ImzMLParser:
     """
     Parser for imzML 1.1.0 files (see specification here:
