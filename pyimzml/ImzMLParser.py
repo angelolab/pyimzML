@@ -95,6 +95,7 @@ class ImzMLParserLite:
         self.mzGroupId = self.intGroupId = self.mzPrecision = self.intensityPrecision = None
         self.parse_lib = parse_lib
         self.iterparse = choose_iterparse(parse_lib)
+        self.ns = {"ns": "http://psi.hupo.org/ms/mzml"}
         self.__extract_metadata()
         self.__process_spectra()
 
@@ -169,31 +170,30 @@ class ImzMLParserLite:
     def __process_spectra(self):
         # Second pass to process each spectrum
         for event, elem in self.iterparse(self.filename, events=("start", "end")):
-            if event == "start" and elem.tag.endswith("spectrum"):
-                for binaryDataArray in elem.findall(".//binaryDataArray"):
-                    print("Found binary data array")
-                    ref = binaryDataArray.find(".//referenceableParamGroupRef").attrib["ref"]
+            if event == "start" and elem.tag.endswith("{http://psi.hupo.org/ms/mzml}spectrum"):
+                for binaryDataArray in elem.findall(".//ns:binaryDataArray", self.ns):
+                    ref = binaryDataArray.find(".//ns:referenceableParamGroupRef", self.ns).attrib["ref"]
                     if ref == "mzArray":
                         print("Found mzArray")
                         # Process m/z array data
-                        offset = int(binaryDataArray.find(".//*[name()='external offset']").attrib["value"])
-                        array_length = int(binaryDataArray.find(".//*[name()='external array length']").attrib["value"])
+                        offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
+                        array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
                         self.mzOffsets.append(offset)
                         self.mzLengths.append(array_length)
                     elif ref == "intensityArray":
                         print("Found intensityArray")
                         # Process intensity array data
-                        offset = int(binaryDataArray.find(".//*[name()='external offset']").attrib["value"])
-                        array_length = int(binaryDataArray.find(".//*[name()='external array length']").attrib["value"])
+                        offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
+                        array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
                         self.intensityOffsets.append(offset)
                         self.intensityLengths.append(array_length)
 
                 # Extract position coordinates
-                scan_elem = elem.find(".//scanList/scan")
+                scan_elem = elem.find(".//ns:scanList/ns:scan", self.ns)
                 if scan_elem is not None:
                     print("Found scan elem")
-                    x = int(scan_elem.find(".//*[name()='position x']").attrib["value"])
-                    y = int(scan_elem.find(".//*[name()='position y']").attrib["value"])
+                    x = int(scan_elem.find(".//ns:cvParam[@name='position x']", self.ns).attrib["value"])
+                    y = int(scan_elem.find(".//ns:cvParam[@name='position y']", self.ns).attrib["value"])
                     self.coordinates.append((int(x), int(y), 0))
             elem.clear()
 
