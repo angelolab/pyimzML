@@ -26,7 +26,7 @@ from pyimzml.metadata import Metadata, SpectrumData
 from pyimzml.ontology.ontology import convert_cv_param
 
 PRECISION_DICT = {"32-bit float": 'f', "64-bit float": 'd', "32-bit integer": 'i', "64-bit integer": 'l'}
-SIZE_DICT = {'f': 4, 'd': 8, 'i': 4, 'l': 8}
+SIZE_DICT = {"f": 4, "d": 8, "i": 4, "l": 8}
 INFER_IBD_FROM_IMZML = object()
 XMLNS_PREFIX = "{http://psi.hupo.org/ms/mzml}"
 
@@ -162,7 +162,7 @@ class ImzMLParserLite:
         # Second pass to process each spectrum
         for event, elem in self.iterparse(self.filename, events=("start", "end")):
             if event == 'start' and elem.tag.endswith("spectrum"):
-                for binaryDataArray in spectrum.findall(".//binaryDataArray"):
+                for binaryDataArray in elem.findall(".//binaryDataArray"):
                     ref = binaryDataArray.find(".//referenceableParamGroupRef").attrib["ref"]
                     if ref == "mzArray":
                         # Process m/z array data
