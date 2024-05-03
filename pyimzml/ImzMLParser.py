@@ -174,12 +174,14 @@ class ImzMLParserLite:
                 for binaryDataArray in elem.findall(".//ns:binaryDataArray", self.ns):
                     ref = binaryDataArray.find(".//ns:referenceableParamGroupRef", self.ns).attrib["ref"]
                     if ref == "mzArray":
+                        print("Found mzArray")
                         # Process m/z array data
                         offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
                         array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
                         self.mzOffsets.append(offset)
                         self.mzLengths.append(array_length)
                     elif ref == "intensityArray":
+                        print("Found intensityArray")
                         # Process intensity array data
                         offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
                         array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
@@ -189,6 +191,7 @@ class ImzMLParserLite:
                 # Extract position coordinates
                 scan_elem = elem.find(".//ns:scanList/ns:scan", self.ns)
                 if scan_elem is not None:
+                    print("Found scan elem")
                     x = int(scan_elem.find(".//ns:cvParam[@name='position x']", self.ns).attrib["value"])
                     y = int(scan_elem.find(".//ns:cvParam[@name='position y']", self.ns).attrib["value"])
                     self.coordinates.append((int(x), int(y), 0))
