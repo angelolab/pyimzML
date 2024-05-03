@@ -144,19 +144,27 @@ class ImzMLParserLite:
         self.__fix_offsets()
 
     def __extract_metadata(self):
+        seen_mz_arr = False
+        seen_intensity_arr = False
+
         # First pass to extract metadata
         for event, elem in self.iterparse(self.filename, events=("start", "end")):
             if event == 'start' and elem.tag.endswith("referenceableParamGroup"):
-                id = elem.get("id")
-                if id == "mzArray" or id == "intensityArray":
+                ref_id = elem.get("id")
+                if ref_id == "mzArray" or ref_id == "intensityArray":
                     for child in elem:
                         if child.get("name") == "64-bit float" or child.get("name") == "32-bit float":
-                            if id == "mzArray":
+                            if ref_id == "mzArray":
                                 self.mzPrecision = child.get("name")
-                            elif id == "intensityArray":
+                                seen_mz_arr = True
+                            elif ref_id == "intensityArray":
                                 self.intensityPrecision = child.get("name")
+                                seen_intensity_arr = True
             # Clear elements not needed to free memory
             elem.clear()
+
+            if seen_mz_arr and seen_intensity_arr:
+                break
 
     def __process_spectra(self):
         # Second pass to process each spectrum
@@ -176,7 +184,21 @@ class ImzMLParserLite:
                         array_length = int(binaryDataArray.find(".//*[name()='external array length']").attrib["value"])
                         self.intensityOffsets.append(offset)
                         self.intensityLengths.append(array_length)
+
+                # Extract position coordinates
+                scan_elem = spectrum.find(".//scanList/scan")
+                if scan_elem is not None:
+                    x = int(scan_elem.find(".//*[name()='position x']").attrib['value'])
+                    y = int(scan_elem.find(".//*[name()='position y']").attrib['value'])
+                    self.coordinates.append((int(x), int(y), 0))
             elem.clear()
+
+    @staticmethod
+    def _infer_bin_filename(imzml_path):
+        imzml_path = Path(imzml_path)
+        ibd_path = [f for f in imzml_path.parent.glob('*')
+                    if re.match(r".+\.ibd", str(f), re.IGNORECASE) and f.stem == imzml_path.stem][0]
+        return str(ibd_path)
 
 
 class ImzMLParser:
