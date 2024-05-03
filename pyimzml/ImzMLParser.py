@@ -186,7 +186,7 @@ class ImzMLParserLite:
                         self.intensityLengths.append(array_length)
 
                 # Extract position coordinates
-                scan_elem = spectrum.find(".//scanList/scan")
+                scan_elem = elem.find(".//scanList/scan")
                 if scan_elem is not None:
                     x = int(scan_elem.find(".//*[name()='position x']").attrib['value'])
                     y = int(scan_elem.find(".//*[name()='position y']").attrib['value'])
