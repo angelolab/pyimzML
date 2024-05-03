@@ -170,6 +170,7 @@ class ImzMLParserLite:
         # Second pass to process each spectrum
         for event, elem in self.iterparse(self.filename, events=("start", "end")):
             if event == "start" and elem.tag.endswith("spectrum"):
+                print("Found spectrum")
                 for binaryDataArray in elem.findall(".//binaryDataArray"):
                     ref = binaryDataArray.find(".//referenceableParamGroupRef").attrib["ref"]
                     if ref == "mzArray":
