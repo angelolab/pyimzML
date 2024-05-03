@@ -171,7 +171,7 @@ class ImzMLParserLite:
         # Second pass to process each spectrum
         for event, elem in self.iterparse(self.filename, events=("start", "end")):
             if event == "start" and elem.tag.endswith("{http://psi.hupo.org/ms/mzml}spectrum"):
-                print(elem.attrib(["id"]))
+                print(elem.attrib["id"])
                 for binaryDataArray in elem.findall(".//ns:binaryDataArray", self.ns):
                     ref = binaryDataArray.find(".//ns:referenceableParamGroupRef", self.ns).attrib["ref"]
                     if ref == "mzArray":
