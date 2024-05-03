@@ -177,19 +177,19 @@ class ImzMLParserLite:
                     if ref == "mzArray":
                         print("Found mzArray")
                         # Process m/z array data
-                        offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
-                        array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
-                        self.mzOffsets.append(offset)
-                        self.mzLengths.append(array_length)
-                        print(offset, array_length)
+                        mz_offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
+                        mz_array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
+                        self.mzOffsets.append(mz_offset)
+                        self.mzLengths.append(mz_array_length)
+                        print(mz_offset, mz_array_length)
                     elif ref == "intensityArray":
                         print("Found intensityArray")
                         # Process intensity array data
-                        offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
-                        array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
-                        self.intensityOffsets.append(offset)
-                        self.intensityLengths.append(array_length)
-                        print(offset, array_length)
+                        int_array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
+                        int_offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
+                        self.intensityOffsets.append(int_offset)
+                        self.intensityLengths.append(int_array_length)
+                        print(int_offset, int_array_length)
 
                 # Extract position coordinates
                 scan_elem = elem.find(".//ns:scanList/ns:scan", self.ns)
