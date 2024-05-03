@@ -36,9 +36,9 @@ instrument_confid_elname = "instrumentConfiguration"
 
 
 def choose_iterparse(parse_lib=None):
-    if parse_lib == 'ElementTree':
+    if parse_lib == "ElementTree":
         from xml.etree.ElementTree import iterparse
-    elif parse_lib == 'lxml':
+    elif parse_lib == "lxml":
         from lxml.etree import iterparse
     else:
         from xml.etree.ElementTree import iterparse
@@ -149,7 +149,7 @@ class ImzMLParserLite:
 
         # First pass to extract metadata
         for event, elem in self.iterparse(self.filename, events=("start", "end")):
-            if event == 'start' and elem.tag.endswith("referenceableParamGroup"):
+            if event == "start" and elem.tag.endswith("referenceableParamGroup"):
                 ref_id = elem.get("id")
                 if ref_id == "mzArray" or ref_id == "intensityArray":
                     for child in elem:
@@ -169,16 +169,18 @@ class ImzMLParserLite:
     def __process_spectra(self):
         # Second pass to process each spectrum
         for event, elem in self.iterparse(self.filename, events=("start", "end")):
-            if event == 'start' and elem.tag.endswith("spectrum"):
+            if event == "start" and elem.tag.endswith("spectrum"):
                 for binaryDataArray in elem.findall(".//binaryDataArray"):
                     ref = binaryDataArray.find(".//referenceableParamGroupRef").attrib["ref"]
                     if ref == "mzArray":
+                        print("Found mzArray")
                         # Process m/z array data
                         offset = int(binaryDataArray.find(".//*[name()='external offset']").attrib["value"])
                         array_length = int(binaryDataArray.find(".//*[name()='external array length']").attrib["value"])
                         self.mzOffsets.append(offset)
                         self.mzLengths.append(array_length)
                     elif ref == "intensityArray":
+                        print("Found intensityArray")
                         # Process intensity array data
                         offset = int(binaryDataArray.find(".//*[name()='external offset']").attrib["value"])
                         array_length = int(binaryDataArray.find(".//*[name()='external array length']").attrib["value"])
@@ -188,8 +190,9 @@ class ImzMLParserLite:
                 # Extract position coordinates
                 scan_elem = elem.find(".//scanList/scan")
                 if scan_elem is not None:
-                    x = int(scan_elem.find(".//*[name()='position x']").attrib['value'])
-                    y = int(scan_elem.find(".//*[name()='position y']").attrib['value'])
+                    print("Found scan elem")
+                    x = int(scan_elem.find(".//*[name()='position x']").attrib["value"])
+                    y = int(scan_elem.find(".//*[name()='position y']").attrib["value"])
                     self.coordinates.append((int(x), int(y), 0))
             elem.clear()
 
