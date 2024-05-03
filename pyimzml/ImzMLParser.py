@@ -175,6 +175,8 @@ class ImzMLParserLite:
                 for binaryDataArray in elem.findall(".//ns:binaryDataArray", self.ns):
                     ref = binaryDataArray.find(".//ns:referenceableParamGroupRef", self.ns).attrib["ref"]
                     if ref == "mzArray":
+                        print(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns))
+                        print(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns))
                         print("Found mzArray")
                         # Process m/z array data
                         mz_offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
@@ -183,6 +185,8 @@ class ImzMLParserLite:
                         self.mzLengths.append(mz_array_length)
                         print(mz_offset, mz_array_length)
                     elif ref == "intensityArray":
+                        print(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns))
+                        print(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns))
                         print("Found intensityArray")
                         # Process intensity array data
                         int_array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
