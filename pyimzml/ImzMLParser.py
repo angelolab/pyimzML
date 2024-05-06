@@ -97,8 +97,9 @@ class ImzMLParserLite:
         self.iterparse = choose_iterparse(parse_lib)
         self.ns = {"ns": "http://psi.hupo.org/ms/mzml"}
         self.sl = "{http://psi.hupo.org/ms/mzml}"
-        self.__extract_metadata()
-        self.__process_spectra()
+        self.__process_data()
+        # self.__extract_metadata()
+        # self.__process_spectra()
 
         # self.__iter_read_spectrum_meta(include_spectra_metadata)
         if ibd_file is INFER_IBD_FROM_IMZML:
@@ -144,6 +145,63 @@ class ImzMLParserLite:
                     is_first_spectrum = False
                 slist.remove(elem)
         self.__fix_offsets()
+
+    def __process_data(self):
+        seen_mz_arr = False
+        seen_intensity_arr = False
+
+        # First pass to extract metadata
+        for event, elem in self.iterparse(self.filename, events=("start", "end")):
+            if event == "start" and elem.tag.endswith(f"{self.sl}referenceableParamGroup"):
+                ref_id = elem.get("id")
+                if ref_id == "mzArray" or ref_id == "intensityArray":
+                    for child in elem:
+                        if child.get("name") == "64-bit float" or child.get("name") == "32-bit float":
+                            if ref_id == "mzArray":
+                                self.mzGroupId = ref_id
+                                self.mzPrecision = child.get("name")
+                                seen_mz_arr = True
+                            elif ref_id == "intensityArray":
+                                self.intGroupId = ref_id
+                                self.intensityPrecision = child.get("name")
+                                seen_intensity_arr = True
+
+            if event == "start" and elem.tag.endswith(f"{self.sl}spectrum"):
+            # if event == "end" and elem.tag == f"{self.sl}spectrum":
+                print(elem.get("id"))
+                arrlistelem = elem.find(f"{self.sl}binaryDataArrayList")
+                print(arrlistelem)
+                print(len(arrlistelem))
+                mz_group = None
+                int_group = None
+                for e in arrlistelem:
+                    ref = e.find(f"{self.sl}referenceableParamGroupRef").attrib["ref"]
+                    if ref == self.mzGroupId:
+                        mz_group = e
+                    elif ref == self.intGroupId:
+                        int_group = e
+
+                print("Extracting mzOffset")
+                self.mzOffsets.append(int(_get_cv_param(mz_group, "IMS:1000102")))
+                print("Extracting mzLength")
+                self.mzLengths.append(int(_get_cv_param(mz_group, "IMS:1000103")))
+                print("Extracting intensityOffset")
+                self.intensityOffsets.append(int(_get_cv_param(int_group, "IMS:1000102")))
+                print("Extracting intensityLength")
+                self.intensityLengths.append(int(_get_cv_param(int_group, "IMS:1000103")))
+
+                scan_elem = elem.find(f"{self.sl}scanList/{self.sl}scan")
+                print("Extracting x")
+                x = _get_cv_param(scan_elem, "IMS:1000050")
+                print("Extracting y")
+                y = _get_cv_param(scan_elem, "IMS:1000051")
+                self.coordinates.append((x, y, 1))
+
+            # Clear elements not needed to free memory
+            elem.clear()
+
+            # if seen_mz_arr and seen_intensity_arr:
+            #     break
 
     def __extract_metadata(self):
         seen_mz_arr = False
