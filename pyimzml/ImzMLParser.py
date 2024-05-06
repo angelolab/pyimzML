@@ -192,7 +192,7 @@ class ImzMLParserLite:
                 print("Extracting intensityLength")
                 self.intensityLengths.append(int(_get_cv_param(int_group, "IMS:1000103")))
 
-                scan_elem = elem.find(f"{self.sl}scanList/{self.sl}scan" % (self.sl, self.sl))
+                scan_elem = elem.find(f"{self.sl}scanList/{self.sl}scan")
                 print("Extracting x")
                 x = _get_cv_param(scan_elem, "IMS:1000050")
                 print("Extracting y")
