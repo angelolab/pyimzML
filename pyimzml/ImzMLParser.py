@@ -166,7 +166,7 @@ class ImzMLParserLite:
                                 self.intensityPrecision = child.get("name")
                                 seen_intensity_arr = True
 
-            if event == "start" and elem.tag.endswith(f"{self.sl}spectrum"):
+            if event == "end" and elem.tag.endswith(f"{self.sl}spectrum"):
             # if event == "end" and elem.tag == f"{self.sl}spectrum":
                 print(elem.get("id"))
                 arrlistelem = elem.find(f"{self.sl}binaryDataArrayList")
@@ -198,7 +198,7 @@ class ImzMLParserLite:
                 self.coordinates.append((x, y, 1))
 
             # Clear elements not needed to free memory
-            elem.clear()
+            # elem.clear()
 
             # if seen_mz_arr and seen_intensity_arr:
             #     break
