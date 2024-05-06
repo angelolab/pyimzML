@@ -97,22 +97,15 @@ class ImzMLParserLite:
         self.iterparse = choose_iterparse(parse_lib)
         self.ns = {"ns": "http://psi.hupo.org/ms/mzml"}
         self.sl = "{http://psi.hupo.org/ms/mzml}"
-        # self.__process_data()
         self.__extract_metadata()
         self.__process_spectra()
 
-        # self.__iter_read_spectrum_meta(include_spectra_metadata)
         if ibd_file is INFER_IBD_FROM_IMZML:
             # name of the binary file
             ibd_filename = self._infer_bin_filename(self.filename)
             self.m = open(ibd_filename, "rb")
         else:
             self.m = ibd_file
-
-        # # Dict for basic imzML metadata other than those required for reading
-        # # spectra. See method __readimzmlmeta()
-        # self.imzmldict = self.__readimzmlmeta()
-        # self.imzmldict['max count of pixels z'] = np.asarray(self.coordinates)[:,2].max()
 
     def __iter_read_spectrum_meta(self, include_spectra_metadata):
         """
@@ -146,70 +139,6 @@ class ImzMLParserLite:
                 slist.remove(elem)
         self.__fix_offsets()
 
-    def __process_data(self):
-        seen_mz_arr = False
-        seen_intensity_arr = False
-        # last_root = None
-
-        # First pass to extract metadata
-        for event, elem in self.iterparse(self.filename, events=("end",)):
-            if event == "start" and elem.tag.endswith(f"{self.sl}referenceableParamGroup"):
-                ref_id = elem.get("id")
-                if ref_id == "mzArray" or ref_id == "intensityArray":
-                    for child in elem:
-                        if child.get("name") == "64-bit float" or child.get("name") == "32-bit float":
-                            if ref_id == "mzArray":
-                                self.mzGroupId = ref_id
-                                self.mzPrecision = child.get("name")
-                                seen_mz_arr = True
-                            elif ref_id == "intensityArray":
-                                self.intGroupId = ref_id
-                                self.intensityPrecision = child.get("name")
-                                seen_intensity_arr = True
-
-            if event == "end" and elem.tag.endswith(f"{self.sl}spectrum"):
-            # if event == "end" and elem.tag == f"{self.sl}spectrum":
-                print(elem.get("id"))
-                arrlistelem = elem.find(f"{self.sl}binaryDataArrayList")
-                print(arrlistelem)
-                print(len(arrlistelem))
-                mz_group = None
-                int_group = None
-                for e in arrlistelem:
-                    ref = e.find(f"{self.sl}referenceableParamGroupRef").attrib["ref"]
-                    if ref == self.mzGroupId:
-                        mz_group = e
-                    elif ref == self.intGroupId:
-                        int_group = e
-
-                print("Extracting mzOffset")
-                self.mzOffsets.append(int(_get_cv_param(mz_group, "IMS:1000102")))
-                print("Extracting mzLength")
-                self.mzLengths.append(int(_get_cv_param(mz_group, "IMS:1000103")))
-                print("Extracting intensityOffset")
-                self.intensityOffsets.append(int(_get_cv_param(int_group, "IMS:1000102")))
-                print("Extracting intensityLength")
-                self.intensityLengths.append(int(_get_cv_param(int_group, "IMS:1000103")))
-
-                scan_elem = elem.find(f"{self.sl}scanList/{self.sl}scan")
-                print("Extracting x")
-                x = _get_cv_param(scan_elem, "IMS:1000050")
-                print("Extracting y")
-                y = _get_cv_param(scan_elem, "IMS:1000051")
-                self.coordinates.append((x, y, 1))
-
-                # if last_root is not None:
-                #     last_root.clear()
-                # last_root = elem.getparent()
-
-            # Clear elements not needed to free memory
-            # elem.clear()
-
-            # if seen_mz_arr and seen_intensity_arr:
-            #     break
-        # if last_root is not None:
-        #     last_root.clear()
-
     def __extract_metadata(self):
         seen_mz_arr = False
         seen_intensity_arr = False
@@ -229,8 +158,7 @@ class ImzMLParserLite:
                                 self.intGroupId = ref_id
                                 self.intensityPrecision = child.get("name")
                                 seen_intensity_arr = True
-                # Clear elements not needed to free memory
-                # print("Clearing memory")
+
                 elem.clear()
 
             if seen_mz_arr and seen_intensity_arr:
@@ -239,11 +167,7 @@ class ImzMLParserLite:
     def __process_spectra(self):
         for event, elem in self.iterparse(self.filename, events=("end",)):
             if event == "end" and elem.tag.endswith(f"{self.sl}spectrum"):
-            # if event == "end" and elem.tag == f"{self.sl}spectrum":
-                # print(elem.get("id"))
                 arrlistelem = elem.find(f"{self.sl}binaryDataArrayList")
-                # print(arrlistelem)
-                # print(len(arrlistelem))
                 mz_group = None
                 int_group = None
                 for e in arrlistelem:
@@ -253,96 +177,17 @@ class ImzMLParserLite:
                     elif ref == self.intGroupId:
                         int_group = e
 
-                # print("Extracting mzOffset")
                 self.mzOffsets.append(int(_get_cv_param(mz_group, "IMS:1000102")))
-                # print("Extracting mzLength")
                 self.mzLengths.append(int(_get_cv_param(mz_group, "IMS:1000103")))
-                # print("Extracting intensityOffset")
                 self.intensityOffsets.append(int(_get_cv_param(int_group, "IMS:1000102")))
-                # print("Extracting intensityLength")
                 self.intensityLengths.append(int(_get_cv_param(int_group, "IMS:1000103")))
 
                 scan_elem = elem.find(f"{self.sl}scanList/{self.sl}scan")
-                # print("Extracting x")
                 x = _get_cv_param(scan_elem, "IMS:1000050")
-                # print("Extracting y")
                 y = _get_cv_param(scan_elem, "IMS:1000051")
-                self.coordinates.append((x, y, 1))
+                self.coordinates.append((int(x), int(y), 1))
 
-                # print("Clearing memory")
                 elem.clear()
-
-    def __process_spectra_old(self):
-        # Second pass to process each spectrum
-        for event, elem in self.iterparse(self.filename, events=("start", "end")):
-            if event == "start" and elem.tag.endswith("{http://psi.hupo.org/ms/mzml}spectrum"):
-                # for binaryDataArray in elem.findall(f"{self.sl}binaryDataArray"):
-                for binaryDataArray in elem.findall(".//ns:binaryDataArray", self.ns):
-                    ref = binaryDataArray.find(".//ns:referenceableParamGroupRef", self.ns).attrib["ref"]
-                    offset_elem = binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns)
-                    array_length_elem = binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns)
-                    if ref == "mzArray":
-                        if offset_elem is not None:
-                            mz_offset = int(offset_elem.attrib["value"])
-                            self.mzOffsets.append(mz_offset)
-                        else:
-                            print(f"Missing mzOffset for spectrum id={spectrum.get('id')}")
-
-                        if array_length_elem is not None:
-                            mz_array_length = int(array_length_elem.attrib["value"])
-                            self.mzLengths.append(mz_array_length)
-                        else:
-                            print(f"Missing mzLength for spectrum id={spectrum.get('id')}")
-                        # mz_offset = binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns)
-                        # mz_array_length = binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns)
-
-                        # print(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns))
-                        # print(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns))
-                        # print("Found mzArray")
-                        # # Process m/z array data
-                        # mz_offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
-                        # mz_array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
-                        # self.mzOffsets.append(mz_offset)
-                        # self.mzLengths.append(mz_array_length)
-                        # print(mz_offset, mz_array_length)
-                    elif ref == "intensityArray":
-                        if offset_elem is not None:
-                            int_offset = int(offset_elem.attrib["value"])
-                            self.intensityOffsets.append(int_offset)
-                        else:
-                            print(f"Missing intensityOffset for spectrum id={elem.get('id')}")
-
-                        if array_length_elem is not None:
-                            int_array_length = int(array_length_elem.attrib["value"])
-                            self.intensityLengths.append(int_array_length)
-                        else:
-                            print(f"Missing intensityArray for spectrum id={elem.get('id')}")
-                        # print(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns))
-                        # print(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns))
-                        # print("Found intensityArray")
-                        # # Process intensity array data
-                        # int_array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
-                        # int_offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
-                        # self.intensityOffsets.append(int_offset)
-                        # self.intensityLengths.append(int_array_length)
-                        # print(int_offset, int_array_length)
-
-                # Extract position coordinates
-                scan_elem = elem.find(".//ns:scanList/ns:scan", self.ns)
-                if scan_elem is not None:
-                    x_elem = scan_elem.find(".//ns:cvParam[@name='position x']", self.ns)
-                    y_elem = scan_elem.find(".//ns:cvParam[@name='position y']", self.ns)
-                    if x_elem is not None and y_elem is not None:
-                        x = int(x_elem.attrib["value"])
-                        y = int(y_elem.attrib["value"])
-                        self.coordinates.append((x, y))
-                    else:
-                        print(f"Missing position data for spectrum id={spectrum.get('id')}")
-                    # print("Found scan elem")
-                    # x = int(scan_elem.find(".//ns:cvParam[@name='position x']", self.ns).attrib["value"])
-                    # y = int(scan_elem.find(".//ns:cvParam[@name='position y']", self.ns).attrib["value"])
-                    # self.coordinates.append((int(x), int(y), 0))
-            elem.clear()
 
     @staticmethod
     def _infer_bin_filename(imzml_path):
