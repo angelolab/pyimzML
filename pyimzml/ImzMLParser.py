@@ -230,6 +230,7 @@ class ImzMLParserLite:
                                 self.intensityPrecision = child.get("name")
                                 seen_intensity_arr = True
                 # Clear elements not needed to free memory
+                print("Clearing memory")
                 elem.clear()
 
             if seen_mz_arr and seen_intensity_arr:
@@ -268,6 +269,7 @@ class ImzMLParserLite:
                 y = _get_cv_param(scan_elem, "IMS:1000051")
                 self.coordinates.append((x, y, 1))
 
+                print("Clearning memory")
                 elem.clear()
 
     def __process_spectra_old(self):
