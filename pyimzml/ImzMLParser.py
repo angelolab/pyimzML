@@ -230,7 +230,7 @@ class ImzMLParserLite:
                                 self.intensityPrecision = child.get("name")
                                 seen_intensity_arr = True
                 # Clear elements not needed to free memory
-                print("Clearing memory")
+                # print("Clearing memory")
                 elem.clear()
 
             if seen_mz_arr and seen_intensity_arr:
@@ -240,10 +240,10 @@ class ImzMLParserLite:
         for event, elem in self.iterparse(self.filename, events=("end",)):
             if event == "end" and elem.tag.endswith(f"{self.sl}spectrum"):
             # if event == "end" and elem.tag == f"{self.sl}spectrum":
-                print(elem.get("id"))
+                # print(elem.get("id"))
                 arrlistelem = elem.find(f"{self.sl}binaryDataArrayList")
-                print(arrlistelem)
-                print(len(arrlistelem))
+                # print(arrlistelem)
+                # print(len(arrlistelem))
                 mz_group = None
                 int_group = None
                 for e in arrlistelem:
@@ -253,23 +253,23 @@ class ImzMLParserLite:
                     elif ref == self.intGroupId:
                         int_group = e
 
-                print("Extracting mzOffset")
+                # print("Extracting mzOffset")
                 self.mzOffsets.append(int(_get_cv_param(mz_group, "IMS:1000102")))
-                print("Extracting mzLength")
+                # print("Extracting mzLength")
                 self.mzLengths.append(int(_get_cv_param(mz_group, "IMS:1000103")))
-                print("Extracting intensityOffset")
+                # print("Extracting intensityOffset")
                 self.intensityOffsets.append(int(_get_cv_param(int_group, "IMS:1000102")))
-                print("Extracting intensityLength")
+                # print("Extracting intensityLength")
                 self.intensityLengths.append(int(_get_cv_param(int_group, "IMS:1000103")))
 
                 scan_elem = elem.find(f"{self.sl}scanList/{self.sl}scan")
-                print("Extracting x")
+                # print("Extracting x")
                 x = _get_cv_param(scan_elem, "IMS:1000050")
-                print("Extracting y")
+                # print("Extracting y")
                 y = _get_cv_param(scan_elem, "IMS:1000051")
                 self.coordinates.append((x, y, 1))
 
-                print("Clearning memory")
+                # print("Clearing memory")
                 elem.clear()
 
     def __process_spectra_old(self):
