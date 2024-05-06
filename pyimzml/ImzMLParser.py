@@ -174,34 +174,69 @@ class ImzMLParserLite:
                 print(elem.attrib["id"])
                 for binaryDataArray in elem.findall(".//ns:binaryDataArray", self.ns):
                     ref = binaryDataArray.find(".//ns:referenceableParamGroupRef", self.ns).attrib["ref"]
+                    offset_elem = binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns)
+                    array_length_elem = binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns)
                     if ref == "mzArray":
-                        print(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns))
-                        print(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns))
-                        print("Found mzArray")
-                        # Process m/z array data
-                        mz_offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
-                        mz_array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
-                        self.mzOffsets.append(mz_offset)
-                        self.mzLengths.append(mz_array_length)
-                        print(mz_offset, mz_array_length)
+                        if offset_elem is not None:
+                            mz_offset = int(offset_elem.attrib["value"])
+                            self.mzOffsets.append(mz_offset)
+                        else:
+                            print(f"Missing mzOffset for spectrum id={spectrum.get('id')}")
+
+                        if array_length_elem is not None:
+                            mz_array_length = int(array_length_elem.attrib["value"])
+                            self.mzLengths.append(mz_array_length)
+                        else:
+                            print(f"Missing mzLength for spectrum id={spectrum.get('id')}")
+                        # mz_offset = binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns)
+                        # mz_array_length = binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns)
+
+                        # print(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns))
+                        # print(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns))
+                        # print("Found mzArray")
+                        # # Process m/z array data
+                        # mz_offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
+                        # mz_array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
+                        # self.mzOffsets.append(mz_offset)
+                        # self.mzLengths.append(mz_array_length)
+                        # print(mz_offset, mz_array_length)
                     elif ref == "intensityArray":
-                        print(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns))
-                        print(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns))
-                        print("Found intensityArray")
-                        # Process intensity array data
-                        int_array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
-                        int_offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
-                        self.intensityOffsets.append(int_offset)
-                        self.intensityLengths.append(int_array_length)
-                        print(int_offset, int_array_length)
+                        if offset_elem is not None:
+                            int_offset = int(offset_elem.attrib["value"])
+                            self.intensityOffsets.append(int_offset)
+                        else:
+                            print(f"Missing intensityOffset for spectrum id={elem.get('id')}")
+
+                        if array_length_elem is not None:
+                            int_array_length = int(array_length_elem.attrib["value"])
+                            self.intensityLengths.append(int_array_length)
+                        else:
+                            print(f"Missing intensityArray for spectrum id={elem.get('id')}")
+                        # print(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns))
+                        # print(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns))
+                        # print("Found intensityArray")
+                        # # Process intensity array data
+                        # int_array_length = int(binaryDataArray.find(".//ns:cvParam[@name='external array length']", self.ns).attrib["value"])
+                        # int_offset = int(binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns).attrib["value"])
+                        # self.intensityOffsets.append(int_offset)
+                        # self.intensityLengths.append(int_array_length)
+                        # print(int_offset, int_array_length)
 
                 # Extract position coordinates
                 scan_elem = elem.find(".//ns:scanList/ns:scan", self.ns)
                 if scan_elem is not None:
-                    print("Found scan elem")
-                    x = int(scan_elem.find(".//ns:cvParam[@name='position x']", self.ns).attrib["value"])
-                    y = int(scan_elem.find(".//ns:cvParam[@name='position y']", self.ns).attrib["value"])
-                    self.coordinates.append((int(x), int(y), 0))
+                    x_elem = scan_elem.find(".//ns:cvParam[@name='position x']", self.ns)
+                    y_elem = scan_elem.find(".//ns:cvParam[@name='position y']", self.ns)
+                    if x_elem is not None and y_elem is not None:
+                        x = int(x_elem.attrib["value"])
+                        y = int(y_elem.attrib["value"])
+                        self.coordinates.append((x, y))
+                    else:
+                        print(f"Missing position data for spectrum id={spectrum.get('id')}")
+                    # print("Found scan elem")
+                    # x = int(scan_elem.find(".//ns:cvParam[@name='position x']", self.ns).attrib["value"])
+                    # y = int(scan_elem.find(".//ns:cvParam[@name='position y']", self.ns).attrib["value"])
+                    # self.coordinates.append((int(x), int(y), 0))
             elem.clear()
 
     @staticmethod
