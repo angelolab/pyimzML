@@ -174,7 +174,7 @@ class ImzMLParserLite:
         for event, elem in self.iterparse(self.filename, events=("start", "end")):
             print(elem.get("id"))
             # if event == "start" and elem.tag.endswith("{http://psi.hupo.org/ms/mzml}spectrum"):
-            if event == "end" and elem.tag == f"{self.sl}spectrum"
+            if event == "end" and elem.tag == f"{self.sl}spectrum":
                 arrlistelem = elem.find(f"{self.sl}binaryDataArrayList")
                 mz_group = None
                 int_group = None
