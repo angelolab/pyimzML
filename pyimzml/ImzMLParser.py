@@ -97,9 +97,9 @@ class ImzMLParserLite:
         self.iterparse = choose_iterparse(parse_lib)
         self.ns = {"ns": "http://psi.hupo.org/ms/mzml"}
         self.sl = "{http://psi.hupo.org/ms/mzml}"
-        self.__process_data()
-        # self.__extract_metadata()
-        # self.__process_spectra()
+        # self.__process_data()
+        self.__extract_metadata()
+        self.__process_spectra()
 
         # self.__iter_read_spectrum_meta(include_spectra_metadata)
         if ibd_file is INFER_IBD_FROM_IMZML:
@@ -149,10 +149,10 @@ class ImzMLParserLite:
     def __process_data(self):
         seen_mz_arr = False
         seen_intensity_arr = False
-        last_root = None
+        # last_root = None
 
         # First pass to extract metadata
-        for event, elem in self.iterparse(self.filename, events=("start", "end")):
+        for event, elem in self.iterparse(self.filename, events=("end",)):
             if event == "start" and elem.tag.endswith(f"{self.sl}referenceableParamGroup"):
                 ref_id = elem.get("id")
                 if ref_id == "mzArray" or ref_id == "intensityArray":
@@ -198,17 +198,17 @@ class ImzMLParserLite:
                 y = _get_cv_param(scan_elem, "IMS:1000051")
                 self.coordinates.append((x, y, 1))
 
-                if last_root is not None:
-                    last_root.clear()
-                last_root = elem.getparent()
+                # if last_root is not None:
+                #     last_root.clear()
+                # last_root = elem.getparent()
 
             # Clear elements not needed to free memory
             # elem.clear()
 
             # if seen_mz_arr and seen_intensity_arr:
             #     break
-        if last_root is not None:
-            last_root.clear()
+        # if last_root is not None:
+        #     last_root.clear()
 
     def __extract_metadata(self):
         seen_mz_arr = False
@@ -236,8 +236,8 @@ class ImzMLParserLite:
                 break
 
     def __process_spectra(self):
-        for event, elem in self.iterparse(self.filename, events=("start", "end")):
-            if event == "start" and elem.tag.endswith(f"{self.sl}spectrum"):
+        for event, elem in self.iterparse(self.filename, events=("end",)):
+            if event == "end" and elem.tag.endswith(f"{self.sl}spectrum"):
             # if event == "end" and elem.tag == f"{self.sl}spectrum":
                 print(elem.get("id"))
                 arrlistelem = elem.find(f"{self.sl}binaryDataArrayList")
