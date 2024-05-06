@@ -203,7 +203,7 @@ class ImzMLParserLite:
                 y = _get_cv_param(scan_elem, "IMS:1000051")
                 self.coordinates.append((x, y, 1))
 
-            # elem.clear()
+            elem.clear()
 
     def __process_spectra_old(self):
         # Second pass to process each spectrum
