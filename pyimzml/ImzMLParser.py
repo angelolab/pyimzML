@@ -173,7 +173,7 @@ class ImzMLParserLite:
     def __process_spectra(self):
         for event, elem in self.iterparse(self.filename, events=("start", "end")):
             if event == "start" and elem.tag.endswith("{http://psi.hupo.org/ms/mzml}spectrum"):
-                arrlistelem = elem.find("%sbinaryDataArrayList")
+                arrlistelem = elem.find(f"{self.sl}binaryDataArrayList")
                 mz_group = None
                 int_group = None
                 for e in arrlistelem:
