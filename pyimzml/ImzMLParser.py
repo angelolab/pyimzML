@@ -46,12 +46,12 @@ def choose_iterparse(parse_lib=None):
 
 
 def _get_cv_param(elem, accession, deep=False, convert=False):
-    base = './/' if deep else ''
-    node = elem.find('%s%scvParam[@accession="%s"]' % (base, XMLNS_PREFIX, accession))
+    base = ".//" if deep else ""
+    node = elem.find(f"{base}{XMLNS_PREFIX}cvParam[@accession='{accession}']")
     if node is not None:
-        if convert:
-            return convert_cv_param(accession, node.get('value'))
-        return node.get('value')
+        return node.get("value")
+    else:
+        warn("Node not found")
 
 
 class ImzMLParserLite:
@@ -96,6 +96,7 @@ class ImzMLParserLite:
         self.parse_lib = parse_lib
         self.iterparse = choose_iterparse(parse_lib)
         self.ns = {"ns": "http://psi.hupo.org/ms/mzml"}
+        self.sl = "{http://psi.hupo.org/ms/mzml}"
         self.__extract_metadata()
         self.__process_spectra()
 
@@ -156,9 +157,11 @@ class ImzMLParserLite:
                     for child in elem:
                         if child.get("name") == "64-bit float" or child.get("name") == "32-bit float":
                             if ref_id == "mzArray":
+                                self.mzGroupId = ref_id
                                 self.mzPrecision = child.get("name")
                                 seen_mz_arr = True
                             elif ref_id == "intensityArray":
+                                self.intGroupId = ref_id
                                 self.intensityPrecision = child.get("name")
                                 seen_intensity_arr = True
             # Clear elements not needed to free memory
@@ -168,10 +171,41 @@ class ImzMLParserLite:
                 break
 
     def __process_spectra(self):
+        for event, elem in self.iterparse(self.filename, events=("start", "end")):
+            if event == "start" and elem.tag.endswith("{http://psi.hupo.org/ms/mzml}spectrum"):
+                arrlistelem = elem.find("%sbinaryDataArrayList")
+                mz_group = None
+                int_group = None
+                for e in arrlistelem:
+                    ref = e.find(f"{self.sl}referenceableParamGroupRef").attrib["ref"]
+                    if ref == self.mzGroupId:
+                        mz_group = e
+                    elif ref == self.intGroupId:
+                        int_group = e
+
+                print("Extracting mzOffset")
+                self.mzOffsets.append(int(_get_cv_param(mz_group, "IMS:1000102")))
+                print("Extracting mzLength")
+                self.mzLengths.append(int(_get_cv_param(mz_group, "IMS:1000103")))
+                print("Extracting intensityOffset")
+                self.intensityOffsets.append(int(_get_cv_param(int_group, "IMS:1000102")))
+                print("Extracting intensityLength")
+                self.intensityLengths.append(int(_get_cv_param(int_group, "IMS:1000103")))
+
+                scan_elem = elem.find(f"{self.sl}scanList/{self.sl}scan" % (self.sl, self.sl))
+                print("Extracting x")
+                x = _get_cv_param(scan_elem, "IMS:1000050")
+                print("Extracting y")
+                y = _get_cv_param(scan_elem, "IMS:1000051")
+                self.coordinates.append((x, y, 1))
+
+            elem.clear()
+
+    def __process_spectra_old(self):
         # Second pass to process each spectrum
         for event, elem in self.iterparse(self.filename, events=("start", "end")):
             if event == "start" and elem.tag.endswith("{http://psi.hupo.org/ms/mzml}spectrum"):
-                print(elem.attrib["id"])
+                # for binaryDataArray in elem.findall(f"{self.sl}binaryDataArray"):
                 for binaryDataArray in elem.findall(".//ns:binaryDataArray", self.ns):
                     ref = binaryDataArray.find(".//ns:referenceableParamGroupRef", self.ns).attrib["ref"]
                     offset_elem = binaryDataArray.find(".//ns:cvParam[@name='external offset']", self.ns)
