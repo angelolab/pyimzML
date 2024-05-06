@@ -198,7 +198,7 @@ class ImzMLParserLite:
                 self.coordinates.append((x, y, 1))
 
             # Clear elements not needed to free memory
-            # elem.clear()
+            elem.clear()
 
             # if seen_mz_arr and seen_intensity_arr:
             #     break
