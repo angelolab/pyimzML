@@ -176,6 +176,8 @@ class ImzMLParserLite:
             # if event == "end" and elem.tag == f"{self.sl}spectrum":
                 print(elem.get("id"))
                 arrlistelem = elem.find(f"{self.sl}binaryDataArrayList")
+                print(arrlistelem)
+                print(len(arrlistelem))
                 mz_group = None
                 int_group = None
                 for e in arrlistelem:
