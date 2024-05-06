@@ -149,6 +149,7 @@ class ImzMLParserLite:
     def __process_data(self):
         seen_mz_arr = False
         seen_intensity_arr = False
+        last_root = None
 
         # First pass to extract metadata
         for event, elem in self.iterparse(self.filename, events=("start", "end")):
@@ -197,11 +198,17 @@ class ImzMLParserLite:
                 y = _get_cv_param(scan_elem, "IMS:1000051")
                 self.coordinates.append((x, y, 1))
 
+                if last_root is not None:
+                    last_root.clear()
+                last_root = elem.getparent()
+
             # Clear elements not needed to free memory
-            elem.clear()
+            # elem.clear()
 
             # if seen_mz_arr and seen_intensity_arr:
             #     break
+        if last_root is not None:
+            last_root.clear()
 
     def __extract_metadata(self):
         seen_mz_arr = False
