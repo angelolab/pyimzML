@@ -107,38 +107,6 @@ class ImzMLParserLite:
         else:
             self.m = ibd_file
 
-    def __iter_read_spectrum_meta(self, include_spectra_metadata):
-        """
-        This method should only be called by __init__. Reads the data formats, coordinates and offsets from
-        the .imzML file and initializes the respective attributes. While traversing the XML tree, the per-spectrum
-        metadata is pruned, i.e. the <spectrumList> element(s) are left behind empty.
-
-        Supported accession values for the number formats: "MS:1000521", "MS:1000523", "IMS:1000141" or
-        "IMS:1000142". The string values are "32-bit float", "64-bit float", "32-bit integer", "64-bit integer".
-        """
-        mz_group = int_group = None
-        slist = None
-        elem_iterator = self.iterparse(self.filename, events=("start", "end"))
-
-        if sys.version_info > (3,):
-            _, self.root = next(elem_iterator)
-        else:
-            _, self.root = elem_iterator.next()
-
-        is_first_spectrum = True
-
-        for event, elem in elem_iterator:
-            if elem.tag == self.sl + "spectrumList" and event == "start":
-                self.__process_metadata()
-                slist = elem
-            elif elem.tag == self.sl + "spectrum" and event == "end":
-                self.__process_spectrum(elem, include_spectra_metadata)
-                if is_first_spectrum:
-                    self.__read_polarity(elem)
-                    is_first_spectrum = False
-                slist.remove(elem)
-        self.__fix_offsets()
-
     def __extract_metadata(self):
         seen_mz_arr = False
         seen_intensity_arr = False
@@ -195,6 +163,66 @@ class ImzMLParserLite:
         ibd_path = [f for f in imzml_path.parent.glob('*')
                     if re.match(r".+\.ibd", str(f), re.IGNORECASE) and f.stem == imzml_path.stem][0]
         return str(ibd_path)
+
+    def getspectrum(self, index):
+        """
+        Reads the spectrum at specified index from the .ibd file.
+
+        :param index:
+            Index of the desired spectrum in the .imzML file
+
+        Output:
+
+        mz_array: numpy.ndarray
+            Sequence of m/z values representing the horizontal axis of the desired mass
+            spectrum
+        intensity_array: numpy.ndarray
+            Sequence of intensity values corresponding to mz_array
+        mobility_array: numpy.ndarray
+            Sequence of mobility values corresponding to mz_array. Only returned if
+            self.include_mobility == True.
+        """
+        mz_bytes, intensity_bytes = self.get_spectrum_as_string(index)
+        # TODO: Last pixel/frame seems to have incorrect byte sizes? unsure if pyimzML issue or TIMSCONVERT issue
+        if len(mz_bytes) == len(intensity_bytes):
+            mz_array = np.frombuffer(mz_bytes, dtype=self.mzPrecision)
+            intensity_array = np.frombuffer(intensity_bytes, dtype=self.intensityPrecision)
+            return mz_array, intensity_array
+        else:
+            return np.zeros(1), np.zeros(1)
+
+    def get_spectrum_as_string(self, index):
+        """
+        Reads m/z array and intensity array of the spectrum at specified location
+        from the binary file as a byte string. The string can be unpacked by the struct
+        module. To get the arrays as numbers, use getspectrum
+
+        :param index:
+            Index of the desired spectrum in the .imzML file
+        :rtype: Tuple[str, str]
+
+        Output:
+
+        mz_string:
+            string where each character represents a byte of the mz array of the
+            spectrum
+        intensity_string:
+            string where each character represents a byte of the intensity array of
+            the spectrum
+        mobility_string:
+            string where each character representts a byte of the mobility array of
+            the spectrum
+            Only returned if self.include_mobility == True
+        """
+        offsets = [self.mzOffsets[index], self.intensityOffsets[index]]
+        lengths = [self.mzLengths[index], self.intensityLengths[index]]
+        lengths[0] *= self.sizeDict[self.mzPrecision]
+        lengths[1] *= self.sizeDict[self.intensityPrecision]
+        self.m.seek(offsets[0])
+        mz_string = self.m.read(lengths[0])
+        self.m.seek(offsets[1])
+        intensity_string = self.m.read(lengths[1])
+        return mz_string, intensity_string
 
 
 class ImzMLParser:
