@@ -216,8 +216,8 @@ class ImzMLParserLite:
         """
         offsets = [self.mzOffsets[index], self.intensityOffsets[index]]
         lengths = [self.mzLengths[index], self.intensityLengths[index]]
-        lengths[0] *= self.sizeDict[self.mzPrecision]
-        lengths[1] *= self.sizeDict[self.intensityPrecision]
+        lengths[0] *= self.sizeDict[self.precisionDict[self.mzPrecision]]
+        lengths[1] *= self.sizeDict[self.precisionDict[self.intensityPrecision]]
         self.m.seek(offsets[0])
         mz_string = self.m.read(lengths[0])
         self.m.seek(offsets[1])
