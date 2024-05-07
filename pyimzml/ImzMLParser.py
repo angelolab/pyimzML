@@ -185,8 +185,8 @@ class ImzMLParserLite:
         mz_bytes, intensity_bytes = self.get_spectrum_as_string(index)
         # TODO: Last pixel/frame seems to have incorrect byte sizes? unsure if pyimzML issue or TIMSCONVERT issue
         if len(mz_bytes) == len(intensity_bytes):
-            mz_array = np.frombuffer(mz_bytes, dtype=self.mzPrecision)
-            intensity_array = np.frombuffer(intensity_bytes, dtype=self.intensityPrecision)
+            mz_array = np.frombuffer(mz_bytes, dtype=self.precisionDict[self.mzPrecision])
+            intensity_array = np.frombuffer(intensity_bytes, dtype=self.precisionDict[self.intensityPrecision])
             return mz_array, intensity_array
         else:
             return np.zeros(1), np.zeros(1)
