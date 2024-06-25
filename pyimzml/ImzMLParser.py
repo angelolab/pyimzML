@@ -142,8 +142,10 @@ class ImzMLParserLite:
                     ref = e.find(f"{self.sl}referenceableParamGroupRef").attrib["ref"]
                     if ref == self.mzGroupId:
                         mz_group = e
+                        print(f"mzGroupId = {e}")
                     elif ref == self.intGroupId:
                         int_group = e
+                        print(f"intGroupdId = {e}")
 
                 self.mzOffsets.append(int(_get_cv_param(mz_group, "IMS:1000102")))
                 self.mzLengths.append(int(_get_cv_param(mz_group, "IMS:1000103")))
@@ -189,6 +191,7 @@ class ImzMLParserLite:
             intensity_array = np.frombuffer(intensity_bytes, dtype=self.precisionDict[self.intensityPrecision])
             return mz_array, intensity_array
         else:
+            print(f"Mismatch between mz_byte and intensity_byte lengths: ({len(mz_bytes)}, {len(intensity_bytes)})")
             return np.zeros(1), np.zeros(1)
 
     def get_spectrum_as_string(self, index):
@@ -448,8 +451,10 @@ class ImzMLParser:
             ref = e.find('%sreferenceableParamGroupRef' % self.sl).attrib["ref"]
             if ref == self.mzGroupId:
                 mz_group = e
+                print(f"mzGroupId = {e}")
             elif ref == self.intGroupId:
                 int_group = e
+                print(f"intensityGroupdId = {e}")
             elif self.include_mobility == True:
                 if ref == self.mobGroupId:
                     mob_group = e
@@ -605,6 +610,7 @@ class ImzMLParser:
             elif self.include_mobility == False:
                 return mz_array, intensity_array
         else:
+            print(f"Mismatch between mz_byte and intensity_byte lengths: ({len(mz_bytes)}, {len(intensity_bytes)})")
             if self.include_mobility == True:
                 return np.zeros(1), np.zeros(1), np.zeros(1)
             elif self.include_mobility == False:
