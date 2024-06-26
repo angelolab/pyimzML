@@ -115,14 +115,14 @@ class ImzMLParserLite:
         for event, elem in self.iterparse(self.filename, events=("start", "end")):
             if event == "start" and elem.tag.endswith("referenceableParamGroup"):
                 ref_id = elem.get("id")
-                if ref_id == "mzArray" or ref_id == "intensityArray":
+                if ref_id == "mzArray" or ref_id == "m/z array" or ref_id == "intensityArray" or ref_id == "intensity array":
                     for child in elem:
                         if child.get("name") == "64-bit float" or child.get("name") == "32-bit float":
-                            if ref_id == "mzArray":
+                            if ref_id == "mzArray" or ref_id == "m/z array":
                                 self.mzGroupId = ref_id
                                 self.mzPrecision = child.get("name")
                                 seen_mz_arr = True
-                            elif ref_id == "intensityArray":
+                            elif ref_id == "intensityArray" or ref_id == "intensity array":
                                 self.intGroupId = ref_id
                                 self.intensityPrecision = child.get("name")
                                 seen_intensity_arr = True
