@@ -366,11 +366,11 @@ class ImzMLParser:
         is_first_spectrum = True
 
         for i, (event, elem) in enumerate(elem_iterator):
-            print(f"Processing the {i}th spectra")
             if elem.tag == self.sl + "spectrumList" and event == "start":
                 self.__process_metadata()
                 slist = elem
             elif elem.tag == self.sl + "spectrum" and event == "end":
+                print(f"Processing the {i}th spectra")
                 self.__process_spectrum(elem, include_spectra_metadata)
                 if is_first_spectrum:
                     self.__read_polarity(elem)
@@ -460,7 +460,9 @@ class ImzMLParser:
                 if ref == self.mobGroupId:
                     mob_group = e
         self.mzOffsets.append(int(_get_cv_param(mz_group, 'IMS:1000102')))
+        print(int(_get_cv_param(mz_group, 'IMS:1000102')))
         self.mzLengths.append(int(_get_cv_param(mz_group, 'IMS:1000103')))
+        print(int(_get_cv_param(mz_group, 'IMS:1000103')))
         self.intensityOffsets.append(int(_get_cv_param(int_group, 'IMS:1000102')))
         self.intensityLengths.append(int(_get_cv_param(int_group, 'IMS:1000103')))
         if self.include_mobility == True:
