@@ -365,7 +365,8 @@ class ImzMLParser:
 
         is_first_spectrum = True
 
-        for event, elem in elem_iterator:
+        for i, (event, elem) in enumerate(elem_iterator):
+            print(f"Processing the {i}th spectra")
             if elem.tag == self.sl + "spectrumList" and event == "start":
                 self.__process_metadata()
                 slist = elem
