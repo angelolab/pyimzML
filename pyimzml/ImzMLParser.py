@@ -365,18 +365,20 @@ class ImzMLParser:
 
         is_first_spectrum = True
 
+        counter = 0
         for i, (event, elem) in enumerate(elem_iterator):
             if elem.tag == self.sl + "spectrumList" and event == "start":
                 self.__process_metadata()
                 slist = elem
             elif elem.tag == self.sl + "spectrum" and event == "end":
-                print(f"Processing the {i}th spectra")
+                print(f"Processing the {counter}th spectra")
                 self.__process_spectrum(elem, include_spectra_metadata)
                 if is_first_spectrum:
                     self.__read_polarity(elem)
                     is_first_spectrum = False
                 slist.remove(elem)
-                elem.clear()
+                counter += 1
+                # elem.clear()
                 # if not self.parse_lib or self.parse_lib == "ElementTree":
                 #     elem.clear()
                 # elif self.parse_lib == "lxml":
@@ -385,15 +387,15 @@ class ImzMLParser:
                 #     # for ancestor in elem.xpath('ancestor-or-self::*'):
                 #     #     while ancestor.getprevious() is not None:
                 #     #         del ancestor.getparent()[0]
-            if event == "end" and self.metadata is not None and not is_first_spectrum:
-                if not self.parse_lib or self.parse_lib == "ElementTree":
-                    elem.clear()
-                elif self.parse_lib == "lxml":
-                    # if elem.getparent() is not None:
-                    #     elem.getparent().clear()
-                    for ancestor in elem.xpath('ancestor-or-self::*'):
-                        while ancestor.getprevious() is not None:
-                            del ancestor.getparent()[0]
+            # if event == "end" and self.metadata is not None and not is_first_spectrum:
+            #     if not self.parse_lib or self.parse_lib == "ElementTree":
+            #         elem.clear()
+            #     elif self.parse_lib == "lxml":
+            #         # if elem.getparent() is not None:
+            #         #     elem.getparent().clear()
+            #         for ancestor in elem.xpath('ancestor-or-self::*'):
+            #             while ancestor.getprevious() is not None:
+            #                 del ancestor.getparent()[0]
         self.__fix_offsets()
 
     def __fix_offsets(self):
